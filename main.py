@@ -1,6 +1,11 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Any, Dict
+
+from schemas import Inquiry
+from database import create_document
 
 app = FastAPI()
 
@@ -63,6 +68,17 @@ def test_database():
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     
     return response
+
+# --------- Business Endpoints ---------
+
+@app.post("/api/inquiries")
+async def create_inquiry(inquiry: Inquiry) -> Dict[str, Any]:
+    """Create a new inquiry document from the website contact form"""
+    try:
+        inserted_id = create_document("inquiry", inquiry)
+        return {"status": "success", "id": inserted_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
